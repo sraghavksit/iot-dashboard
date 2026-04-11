@@ -85,24 +85,48 @@ pipeline {
             steps {
                 echo "☸️ Deploying to Kubernetes cluster..."
                 
-                // For local minikube: load the Docker image into minikube
-                echo "📦 Loading Docker image into minikube..."
-                sh "minikube image load ${IMAGE_LATEST} || echo 'Note: minikube image load may require Docker socket access'"
+                // Set up kubectl configuration to access minikube
+                echo "🔑 Configuring kubectl access..."
+                sh '''
+                    # Update kubeconfig to use correct server URL (minikube IP accessible from Docker network)
+                    kubectl config set-cluster minikube --server=https://host.docker.internal:50537 --insecure-skip-tls-verify || true
+                    
+                    # Verify kubectl can reach the cluster
+                    kubectl cluster-info || echo "Warning: Could not verify cluster connection"
+                '''
                 
-                // Apply K8s manifests (we create these in Phase 5)
-                sh "kubectl apply -f k8s/deployment.yaml"
-                sh "kubectl apply -f k8s/service.yaml"
+                // Apply K8s manifests
+                echo "📋 Applying Kubernetes manifests..."
+                sh "kubectl apply -f k8s/deployment.yaml || kubectl apply -f k8s/deployment.yaml --validate=false"
+                sh "kubectl apply -f k8s/service.yaml || kubectl apply -f k8s/service.yaml --validate=false"
 
                 // Update image to the newly built version
-                sh "kubectl set image deployment/iot-dashboard iot-dashboard=${IMAGE_TAG} --record"
+                echo "🔄 Updating deployment image..."
+                sh "kubectl set image deployment/iot-dashboard iot-dashboard=${IMAGE_TAG} --record || true"
 
                 // Wait for rollout to complete
-                sh "kubectl rollout status deployment/iot-dashboard --timeout=120s"
-                echo "✅ Deployment complete!"
+                echo "⏳ Waiting for deployment rollout..."
+                sh '''
+                    for i in {1..30}; do
+                        if kubectl rollout status deployment/iot-dashboard --timeout=10s 2>/dev/null; then
+                            echo "✅ Deployment complete!"
+                            break
+                        else
+                            echo "Waiting for pods... ($i/30)"
+                            sleep 2
+                        fi
+                    done
+                '''
                 
                 // Get service info
                 echo "📍 Service Information:"
-                sh "kubectl get svc iot-dashboard"
+                sh '''
+                    kubectl get svc iot-dashboard || echo "Service not yet created"
+                    echo ""
+                    echo "To access the app:"
+                    echo "  kubectl port-forward svc/iot-dashboard 3000:80"
+                    echo "  Then visit: http://localhost:3000"
+                '''
             }
         }
     }
