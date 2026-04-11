@@ -5,7 +5,7 @@ const sensors = [
   { id: 2, name: "Humidity",    unit: "%",  min: 40, max: 80 },
   { id: 3, name: "Pressure",    unit: "hPa",min: 995, max: 1015 },
   { id: 4, name: "CO2 Level",   unit: "ppm",min: 400, max: 800 },
-  { id: 5, name: "Light Level", unit: "lux", min: 100, max: 1000 },
+  { id: 5, name: "Air Quality", unit: "AQI", min: 100, max: 500 }
 ];
 
 function randomValue(min, max) {
