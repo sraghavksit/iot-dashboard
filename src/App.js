@@ -39,6 +39,7 @@ function SensorCard({ sensor }) {
         {value}
       </p>
       <p style={{ margin: "5px 0 0", color: "#666" }}>{sensor.unit}</p>
+      <p style={{ margin: "8px 0 0", fontSize: "0.75rem", color: "#888" }}>🕐 Updated: {new Date().toLocaleTimeString()}</p>
       <span style={{
         display: "inline-block", marginTop: "10px", padding: "3px 10px",
         borderRadius: "20px", fontSize: "0.8rem", fontWeight: "bold",
