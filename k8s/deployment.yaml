@@ -36,8 +36,8 @@ spec:
         - name: iot-dashboard
           # Image from Docker Hub — Jenkins updates this tag on each build
           image: raghuksit/iot-dashboard:latest
-          # Always pull latest image from Docker Hub
-          imagePullPolicy: Always
+          # Use local image if available, only pull from Docker Hub if not found locally
+          imagePullPolicy: IfNotPresent
           # Container listens on port 80 (Nginx)
           ports:
             - containerPort: 80

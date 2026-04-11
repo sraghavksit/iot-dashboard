@@ -64,18 +64,19 @@ pipeline {
         // ─── STAGE 4: DOCKER PUSH ────────────────────────────────────
         stage('Docker Push') {
             steps {
-                echo "⬆️ Pushing image to Docker Hub..."
-                // Login using Jenkins stored credentials (never hardcode passwords!)
-                withCredentials([usernamePassword(
-                    credentialsId: DOCKER_CREDENTIALS,
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
-                )]) {
-                    sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
-                    sh "docker push ${IMAGE_TAG}"
-                    sh "docker push ${IMAGE_LATEST}"
-                }
-                echo "✅ Image pushed to hub.docker.com/${DOCKER_HUB_USER}/${IMAGE_NAME}"
+                echo "⬆️ Skipping Docker Hub push for local minikube deployment..."
+                // For local testing, we use the locally built image
+                // In production, push to Docker Hub:
+                // withCredentials([usernamePassword(
+                //     credentialsId: DOCKER_CREDENTIALS,
+                //     usernameVariable: 'DOCKER_USER',
+                //     passwordVariable: 'DOCKER_PASS'
+                // )]) {
+                //     sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
+                //     sh "docker push ${IMAGE_TAG}"
+                //     sh "docker push ${IMAGE_LATEST}"
+                // }
+                echo "✅ Using local Docker image for K8s deployment"
             }
         }
 
@@ -83,16 +84,25 @@ pipeline {
         stage('Deploy to Kubernetes') {
             steps {
                 echo "☸️ Deploying to Kubernetes cluster..."
+                
+                // For local minikube: load the Docker image into minikube
+                echo "📦 Loading Docker image into minikube..."
+                sh "minikube image load ${IMAGE_LATEST} || echo 'Note: minikube image load may require Docker socket access'"
+                
                 // Apply K8s manifests (we create these in Phase 5)
                 sh "kubectl apply -f k8s/deployment.yaml"
                 sh "kubectl apply -f k8s/service.yaml"
 
                 // Update image to the newly built version
-                sh "kubectl set image deployment/iot-dashboard iot-dashboard=${IMAGE_TAG}"
+                sh "kubectl set image deployment/iot-dashboard iot-dashboard=${IMAGE_TAG} --record"
 
                 // Wait for rollout to complete
                 sh "kubectl rollout status deployment/iot-dashboard --timeout=120s"
                 echo "✅ Deployment complete!"
+                
+                // Get service info
+                echo "📍 Service Information:"
+                sh "kubectl get svc iot-dashboard"
             }
         }
     }
