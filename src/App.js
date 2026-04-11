@@ -5,6 +5,7 @@ const sensors = [
   { id: 2, name: "Humidity",    unit: "%",  min: 40, max: 80 },
   { id: 3, name: "Pressure",    unit: "hPa",min: 995, max: 1015 },
   { id: 4, name: "CO2 Level",   unit: "ppm",min: 400, max: 800 },
+  { id: 5, name: "Air Quality", unit: "AQI", min: 100, max: 500 }
 ];
 
 function randomValue(min, max) {
@@ -66,7 +67,7 @@ function App() {
           borderRadius: "12px", marginBottom: "30px",
           display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
-            <h1 style={{ margin: 0, fontSize: "1.8rem" }}>🌐 IoT Sensor Dashboard</h1>
+            <h1 style={{ margin: 0, fontSize: "1.8rem" }}>🌐 Vasu Chowdary's IoT Sensor Dashboard</h1>
             <p style={{ margin: "5px 0 0", opacity: 0.7 }}>
               KSIT — DevOps Workshop 2026
             </p>
