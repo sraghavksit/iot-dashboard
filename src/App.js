@@ -428,8 +428,7 @@ function SensorCard({ sensor }) {
 function App() {
   const [time, setTime] = useState(new Date().toLocaleTimeString());
   const [tempHistory] = useState([24.5, 25.1, 25.8, 26.2, 26.8, 27.1, 27.5, 27.2, 26.9, 26.5, 27.0, 27.3]);
-  const [humidityHistory] = useState([65, 64, 63, 62, 61, 62, 63, 64, 65, 64, 63, 62]);
-  const [alerts, setAlerts] = useState([
+  const [alerts] = useState([
     { id: 1, sensor: "Temperature", message: "High temp detected", time: "14:32", severity: "warning" },
     { id: 2, sensor: "Air Quality", message: "Poor air quality", time: "14:28", severity: "critical" },
     { id: 3, sensor: "Humidity", message: "Low humidity level", time: "14:15", severity: "warning" }
