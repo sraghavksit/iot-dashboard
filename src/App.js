@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import "./App.css";
 
 const sensors = [
   { id: 1, name: "Temperature", unit: "°C", min: 20, max: 35 },
@@ -8,90 +9,102 @@ const sensors = [
 ];
 
 function randomValue(min, max) {
-  return (Math.random() * (max - min) + min).toFixed(1);
+  return parseFloat((Math.random() * (max - min) + min).toFixed(1));
+}
+
+function getSensorStatus(sensor, value) {
+  const mid = (sensor.min + sensor.max) / 2;
+  const range = (sensor.max - sensor.min) / 2;
+  return Math.abs(value - mid) > range * 0.7 ? "warning" : "normal";
 }
 
 function SensorCard({ sensor }) {
-  const [value, setValue] = useState(randomValue(sensor.min, sensor.max));
-  const [status, setStatus] = useState("normal");
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const val = parseFloat(randomValue(sensor.min, sensor.max));
-      setValue(val.toFixed(1));
-      const mid = (sensor.min + sensor.max) / 2;
-      const range = (sensor.max - sensor.min) / 2;
-      setStatus(Math.abs(val - mid) > range * 0.7 ? "warning" : "normal");
-    }, 2000);
-    return () => clearInterval(interval);
-  }, [sensor]);
-
   return (
-    <div style={{
-      background: status === "warning" ? "#fff3cd" : "#d4edda",
-      border: `2px solid ${status === "warning" ? "#ffc107" : "#28a745"}`,
-      borderRadius: "12px", padding: "20px", textAlign: "center",
-      minWidth: "180px", boxShadow: "0 4px 8px rgba(0,0,0,0.1)"
-    }}>
-      <h3 style={{ margin: "0 0 10px", color: "#333" }}>{sensor.name}</h3>
-      <p style={{ fontSize: "2.5rem", fontWeight: "bold", margin: "0",
-        color: status === "warning" ? "#856404" : "#155724" }}>
-        {value}
-      </p>
-      <p style={{ margin: "5px 0 0", color: "#666" }}>{sensor.unit}</p>
-      <span style={{
-        display: "inline-block", marginTop: "10px", padding: "3px 10px",
-        borderRadius: "20px", fontSize: "0.8rem", fontWeight: "bold",
-        background: status === "warning" ? "#ffc107" : "#28a745", color: "white"
-      }}>
-        {status === "warning" ? "⚠ WARNING" : "✓ NORMAL"}
+    <article className={`sensor-card ${sensor.status === "warning" ? "sensor-card-warning" : "sensor-card-normal"}`}>
+      <h3 className="sensor-name">{sensor.name}</h3>
+      <p className="sensor-value">{sensor.value.toFixed(1)}</p>
+      <p className="sensor-unit">{sensor.unit}</p>
+      <span className={`sensor-chip ${sensor.status === "warning" ? "chip-warning" : "chip-normal"}`}>
+        {sensor.status === "warning" ? "WARNING" : "NORMAL"}
       </span>
-    </div>
+    </article>
   );
 }
 
 function App() {
   const [time, setTime] = useState(new Date().toLocaleTimeString());
+  const [sensorReadings, setSensorReadings] = useState(() =>
+    sensors.map((sensor) => {
+      const value = randomValue(sensor.min, sensor.max);
+      return {
+        ...sensor,
+        value,
+        status: getSensorStatus(sensor, value),
+      };
+    })
+  );
+
+  const warningSensors = sensorReadings.filter((sensor) => sensor.status === "warning");
+  const hasWarning = warningSensors.length > 0;
 
   useEffect(() => {
     const t = setInterval(() => setTime(new Date().toLocaleTimeString()), 1000);
     return () => clearInterval(t);
   }, []);
 
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSensorReadings((prev) =>
+        prev.map((sensor) => {
+          const value = randomValue(sensor.min, sensor.max);
+          return {
+            ...sensor,
+            value,
+            status: getSensorStatus(sensor, value),
+          };
+        })
+      );
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, []);
+
   return (
-    <div style={{ fontFamily: "Arial, sans-serif", background: "#f0f2f5",
-      minHeight: "100vh", padding: "30px" }}>
-      <div style={{ maxWidth: "900px", margin: "0 auto" }}>
-        <div style={{ background: "#2c3e50", color: "white", padding: "20px 30px",
-          borderRadius: "12px", marginBottom: "30px",
-          display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+    <main className="dashboard">
+      <section className="dashboard-shell">
+        <header className="dashboard-header">
           <div>
-            <h1 style={{ margin: 0, fontSize: "1.8rem" }}>🌐 IoT Sensor Dashboard</h1>
-            <p style={{ margin: "5px 0 0", opacity: 0.7 }}>
+            <h1 className="dashboard-title">IoT Sensor Dashboard</h1>
+            <p className="dashboard-subtitle">
               KSIT — DevOps Workshop 2026
             </p>
           </div>
-          <div style={{ textAlign: "right" }}>
-            <p style={{ margin: 0, fontSize: "1.2rem" }}>🕐 {time}</p>
-            <p style={{ margin: "5px 0 0", opacity: 0.7, fontSize: "0.85rem" }}>
+          <div className="dashboard-clock">
+            <p className="clock-time">{time}</p>
+            <p className="clock-hint">
               Live Updates Every 2s
             </p>
           </div>
+        </header>
+        {hasWarning && (
+          <div className="warning-banner" role="alert" aria-live="assertive">
+            ALERT: Warning detected in {warningSensors.map((sensor) => sensor.name).join(", ")}
+          </div>
+        )}
+        <div className="sensor-grid">
+          {sensorReadings.map((sensor) => (
+            <SensorCard key={sensor.id} sensor={sensor} />
+          ))}
         </div>
-        <div style={{ display: "flex", gap: "20px", flexWrap: "wrap",
-          justifyContent: "center" }}>
-          {sensors.map(s => <SensorCard key={s.id} sensor={s} />)}
-        </div>
-        <div style={{ marginTop: "30px", background: "white", padding: "20px",
-          borderRadius: "12px", textAlign: "center", color: "#666" }}>
-          <p style={{ margin: 0 }}>
+        <footer className="dashboard-footer">
+          <p>
             📦 Containerized with Docker &nbsp;|&nbsp;
             ⚙️ CI/CD via Jenkins &nbsp;|&nbsp;
             ☸️ Deployed on Kubernetes
           </p>
-        </div>
-      </div>
-    </div>
+        </footer>
+      </section>
+    </main>
   );
 }
 
